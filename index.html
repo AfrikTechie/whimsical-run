@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ziki – bots that walk across the Issues list</title>
+<style>
+:root{--bg:#f3f5fb;--panel:#fff;--card:#eef2fb;--line:#e1e6f3;--blue:#3b6cf0;--ink:#0d1330;--mute:#5b6690;--ok:#2f9e63;--gold:#d99a1c;--face:#0b1430;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#070d24;--panel:#0f1b38;--card:#13234a;--line:#22345f;--ink:#e8edff;--mute:#8c9bc4;--ok:#4fd18b;--gold:#f5c04a}}
+:root[data-theme="dark"]{--bg:#070d24;--panel:#0f1b38;--card:#13234a;--line:#22345f;--ink:#e8edff;--mute:#8c9bc4;--ok:#4fd18b;--gold:#f5c04a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Helvetica Neue",Arial,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer}
+main{max-width:1000px;margin:0 auto;padding:16px 20px 80px}
+header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:22px}
+.logo{font-weight:800;font-size:22px;margin-right:10px}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:99px;padding:6px 14px;font-size:14px}
+.chip.on{background:rgba(59,108,240,.18);border-color:var(--blue);color:var(--blue)}.sp{flex:1}
+.gold{color:var(--gold);font-weight:700}
+.panel{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:18px 16px 8px}
+.bc{color:var(--mute);margin:0 4px 10px}.bc b{color:var(--ink)}
+.dock{display:flex;gap:26px;padding:6px 8px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.slot{text-align:center;width:104px;font-size:12px;color:var(--mute)}.slot b{display:block;color:var(--ink);font-size:14px}
+.ph{width:52px;height:60px;margin:0 auto 4px}
+.gh{width:52px;height:60px;border:2px dashed var(--line);border-radius:16px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;padding:14px 4px}
+.tab{padding:7px 14px;border-radius:99px;background:var(--card);color:var(--mute);font-size:14px;font-variant-numeric:tabular-nums}.tab.a{background:var(--blue);color:#fff}
+.th,.row{display:grid;grid-template-columns:56px 1fr 210px 48px;gap:12px;align-items:center;padding:0 12px}
+.th{color:var(--mute);font-size:13px;padding-bottom:8px}
+.row{border-top:1px solid var(--line);min-height:76px;transition:background .6s}
+.row.hit{background:rgba(59,108,240,.16)}.row.fl{background:rgba(79,209,139,.16)}
+.vt{border:1.5px solid var(--gold);border-radius:12px;text-align:center;padding:4px 0;font-weight:700;font-size:15px}
+.ti{font-size:15px}.meta{font-size:13px;color:var(--mute)}.meta em{font-style:normal;color:var(--ok);font-weight:700;margin-left:6px}
+.st{font-size:14px;display:flex;align-items:center;gap:8px;min-height:36px}
+.st.open{color:var(--ok);cursor:pointer;border-radius:99px;padding:4px 8px;margin-left:-8px;transition:background .2s}.st.open:hover{background:rgba(79,209,139,.14)}
+.dotg{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.av{width:24px;height:24px;border-radius:50%;color:#fff;font:700 12px sans-serif;display:grid;place-items:center;flex:none}
+.sp2{width:14px;height:14px;border:2px solid var(--blue);border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite}
+.st b{color:var(--blue)}.st.done{color:var(--ok)}
+.pri{display:flex;align-items:flex-end;gap:2px;height:16px}.pri i{width:4px;background:var(--line);border-radius:1px}.pri i:nth-child(1){height:6px;background:var(--mute)}.pri i:nth-child(2){height:10px}.pri i:nth-child(3){height:14px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.msg{margin-top:12px;color:var(--mute);min-height:22px;font-size:14px}
+/* bots */
+.bot{width:52px;height:60px;--c:#3b6cf0}.bot svg{width:100%;height:100%;overflow:visible}
+.fc{fill:var(--c)}.pl{fill:var(--face)}.cy{fill:#7ef0ff}.cs{stroke:#7ef0ff;fill:none;stroke-width:3;stroke-linecap:round}
+.eo,.ec,.eh,.gear,.zz{display:none}
+.m-work .eo{display:block}.m-idle .ec{display:block}.m-happy .eh{display:block}.m-work .gear{display:block}.m-idle .zz{display:block}
+.m-work .eo{animation:look 2.4s ease-in-out infinite}
+@keyframes look{0%,100%{transform:translateX(-2px)}50%{transform:translateX(2px)}}
+.bulb{fill:#7ef0ff;animation:pulse 1.6s ease-in-out infinite}.m-idle .bulb{fill:#4a5a8a;animation:none}
+@keyframes pulse{50%{opacity:.3}}
+.gear{transform-box:fill-box;transform-origin:center;animation:spin 1.4s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.m-happy{animation:hop .6s cubic-bezier(.3,.7,.4,1) 2}
+@keyframes hop{40%{transform:translateY(-14px) rotate(-5deg)}70%{transform:translateY(0) scale(1.05,.94)}}
+.zz{font:700 14px sans-serif;fill:var(--mute);animation:zz 2.4s ease-in infinite}
+@keyframes zz{from{transform:translate(0,6px);opacity:0}30%{opacity:1}to{transform:translate(8px,-10px);opacity:0}}
+.walker{position:absolute;left:0;top:0;width:52px;height:60px;z-index:10;pointer-events:none}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+@media(max-width:700px){.th{display:none}.row{grid-template-columns:48px 1fr;padding-top:8px;padding-bottom:8px}.st{grid-column:2}.pri{display:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <span class="logo">ziki</span><span class="chip">Zedu</span><span class="chip on">Product</span><span class="chip">Marketing</span><span class="chip">Security</span>
+  <span class="sp"></span><span class="chip gold">524 pts</span><button class="chip" id="theme">Dark / light</button>
+</header>
+
+<div class="panel" id="panel">
+  <div class="bc">Zedu › <b>Issues</b></div>
+  <div class="dock" id="dock"></div>
+  <div class="tabs" id="tabs"></div>
+  <div class="th"><span>Votes</span><span>Issue</span><span>Status</span><span>Priority</span></div>
+  <div id="rows"></div>
+</div>
+
+<div class="tools">
+  <button class="chip on" id="auto">Auto-dispatch: on</button>
+  <button class="chip" id="snd">Sound off</button>
+  <button class="chip" id="replay">Replay</button>
+</div>
+<div class="msg" id="msg">Click “Ready for bids” on any row to send an agent over.</div>
+</main>
+
+<script>
+const $=id=>document.getElementById(id),wait=ms=>new Promise(r=>setTimeout(r,ms));
+const root=document.documentElement,still=matchMedia('(prefers-reduced-motion:reduce)').matches;
+$('theme').onclick=()=>{root.dataset.theme=root.dataset.theme==='dark'?'light':'dark'};
+let ac=null,snd=false,auto=true,gen=0,AG,R,msgT;
+function tone(f1,f2,d,v,t,nz){
+  if(!snd)return;
+  try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume();const T=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();
+    o.type=t;o.frequency.setValueAtTime(f1,T);o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),T+d*.8);
+    g.gain.setValueAtTime(v,T);g.gain.exponentialRampToValueAtTime(.001,T+d);o.connect(g);g.connect(ac.destination);o.start(T);o.stop(T+d+.02);
+    if(nz){const n=ac.createBufferSource(),b=ac.createBuffer(1,Math.floor(ac.sampleRate*.04),ac.sampleRate),a=b.getChannelData(0);
+      for(let k=0;k<a.length;k++)a[k]=(Math.random()*2-1)*(1-k/a.length);n.buffer=b;const ng=ac.createGain();ng.gain.value=nz;n.connect(ng);ng.connect(ac.destination);n.start(T)}
+  }catch(e){}
+}
+const step=()=>tone(120,55,.08,.1,'triangle',.05),pick=()=>tone(520,820,.16,.1,'sine'),done=()=>{tone(660,660,.16,.08,'sine');setTimeout(()=>tone(990,990,.26,.08,'sine'),120)};
+$('snd').onclick=()=>{snd=!snd;$('snd').textContent=snd?'Sound on':'Sound off';$('snd').classList.toggle('on',snd);if(snd)pick()};
+$('auto').onclick=()=>{auto=!auto;$('auto').textContent='Auto-dispatch: '+(auto?'on':'off');$('auto').classList.toggle('on',auto)};
+function say(t){$('msg').textContent=t;clearTimeout(msgT);msgT=setTimeout(()=>{$('msg').textContent='Click “Ready for bids” on any row to send an agent over.'},2600)}
+
+const bot=(c,m)=>`<div class="bot m-${m}" style="--c:${c}"><svg viewBox="0 0 80 96"><line x1="40" y1="8" x2="40" y2="18" stroke="${c}" stroke-width="3"/><circle class="bulb" cx="40" cy="7" r="4.5"/>
+<rect class="fc" x="8" y="30" width="6" height="12" rx="3"/><rect class="fc" x="66" y="30" width="6" height="12" rx="3"/>
+<rect class="fc" x="14" y="18" width="52" height="38" rx="15"/><rect class="pl" x="20" y="24" width="40" height="26" rx="11"/>
+<g class="eo"><ellipse class="cy" cx="32" cy="36" rx="4.5" ry="5.5"/><ellipse class="cy" cx="48" cy="36" rx="4.5" ry="5.5"/></g>
+<g class="ec"><path class="cs" d="M27 37q5 4 10 0M43 37q5 4 10 0"/></g><g class="eh"><path class="cs" d="M27 39q5-8 10 0M43 39q5-8 10 0"/></g>
+<path class="cs" d="M35 44q5 3 10 0" stroke-width="2"/>
+<rect class="fc" x="24" y="82" width="14" height="9" rx="4"/><rect class="fc" x="42" y="82" width="14" height="9" rx="4"/>
+<rect class="fc" x="22" y="58" width="36" height="28" rx="10"/><circle class="cy" cx="40" cy="72" r="4" opacity=".8"/>
+<rect class="fc" x="12" y="60" width="8" height="18" rx="4"/><rect class="fc" x="60" y="60" width="8" height="18" rx="4"/>
+<circle class="gear" cx="72" cy="10" r="6" fill="none" stroke="#7ef0ff" stroke-width="3" stroke-dasharray="4 3"/><text class="zz" x="62" y="18">z</text></svg></div>`;
+
+const ROWS=[
+ {v:43,id:'#2',t:'Bug: Kebab menu (“More options”) in DM header is unresponsive on the desktop app',m:'6 comments · 15 hours ago',i:20},
+ {v:37,id:'#7',t:'[Design] Hero avatar row under “Join 10,000+ students” doesn’t look like real, varied learners',m:'7 comments · 2 days ago',i:9},
+ {v:35,id:'#90',t:'Signing Out of Workspace and Deleting Organization Both Show Loading Spinners Simultan…',m:'2 comments · Web · 3 days ago',i:12},
+ {v:33,id:'#148',t:'Footer Facebook icon links to a broken URL',m:'1 comment · Web · 3 days ago',i:11},
+ {v:32,id:'#181',t:'[Content] Login screen says “Already have an account? Sign up” and “Sign up with Google/…',m:'4 comments · Desktop · 2 days ago',i:8},
+ {v:29,id:'#107',t:'[Design] Desktop Sign up screen doesn’t fit in the default window',m:'3 comments · Desktop · 3 days ago',i:6},
+ {v:28,id:'#183',t:'[Bug] Voice message shows as “Video” in the chats list',m:'2 comments · Mobile · 1 day ago',i:10}
+];
+const AGD=[['Lambo','#8a5cf0'],['Tami','#3b9cf0'],['Dami','#f07a3b']],BASE={o:968,p:68,d:347};
+
+function render(){
+  $('rows').innerHTML=R.map((r,i)=>{
+    const st=r.s==='open'?`<span class="st open" id="s${i}" data-i="${i}" title="Send an agent"><span class="dotg"></span>Ready for bids</span>`
+     :r.s==='prog'?`<span class="st" id="s${i}"><span class="av" style="background:${r.by.c}">${r.by.n[0]}</span><b>In progress</b> · ${r.by.n}<span class="sp2"></span></span>`
+     :`<span class="st done" id="s${i}"><span class="av" style="background:${r.by.c}">${r.by.n[0]}</span>Done by ${r.by.n} ✓</span>`;
+    return `<div class="row ${r.hit?'hit':''} ${r.fl?'fl':''}" id="r${i}"><div class="vt">${r.v}</div><div><div class="ti">${r.t}</div><div class="meta">${r.id} · ${r.m}<em>Idea ✓${r.i}</em></div></div>${st}<span class="pri"><i></i><i></i><i></i></span></div>`}).join('');
+  const p=R.filter(r=>r.s==='prog').length,d=R.filter(r=>r.s==='done').length;
+  $('tabs').innerHTML=`<span class="tab a">Open ${BASE.o-p-d}</span><span class="tab">In progress ${BASE.p+p}</span><span class="tab">Done ${BASE.d+d}</span>`;
+}
+function dock(){
+  $('dock').innerHTML=AG.map((a,i)=>{
+    const t=a.st==='away'?'On the move…':a.st==='work'?'Working on '+a.job:a.st==='happy'?'Done!':'Standing by';
+    return `<div class="slot"><div class="ph" id="ph${i}">${a.st==='away'?'<div class="gh"></div>':bot(a.c,a.st==='work'?'work':a.st==='happy'?'happy':'idle')}</div><b>${a.n}</b><span>${t}</span></div>`}).join('');
+}
+function walk(el,pts,speed){
+  return new Promise(res=>{
+    const seg=[];let len=0;
+    for(let i=1;i<pts.length;i++){const d=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);seg.push(d);len+=d}
+    const N=Math.max(8,Math.round(len/8)),kf=[];
+    for(let n=0;n<=N;n++){
+      let d=n/N*len,i=0;while(i<seg.length-1&&d>seg[i]){d-=seg[i];i++}
+      const k=seg[i]?d/seg[i]:0,x=pts[i][0]+(pts[i+1][0]-pts[i][0])*k,y=pts[i][1]+(pts[i+1][1]-pts[i][1])*k;
+      const dir=pts[i+1][0]<pts[i][0]?-1:1,ph=n/N*len/26*Math.PI;
+      kf.push({transform:'translate('+x+'px,'+(y-Math.abs(Math.sin(ph))*7)+'px) rotate('+(Math.sin(ph)*6)+'deg) scaleX('+dir+')'});
+    }
+    for(let s=1;s<=Math.floor(len/26);s++)setTimeout(step,s*26/speed);
+    el.animate(kf,{duration:len/speed,easing:'linear',fill:'forwards'}).onfinish=res;
+  });
+}
+function finish(ix,a,g){
+  if(g!==gen)return;
+  R[ix].s='done';R[ix].fl=true;a.st='happy';render();dock();done();
+  setTimeout(()=>{if(g!==gen)return;R[ix].fl=false;a.st='idle';a.job='';render();dock()},1100);
+}
+async function go(ix){
+  const g=gen,ai=AG.findIndex(a=>a.st==='idle'),r=R[ix];
+  if(!r||r.s!=='open'||r.claim)return;
+  if(ai<0){say('All agents are busy. Give one a moment to finish.');return}
+  const a=AG[ai];r.claim=true;a.st='away';dock();
+  if(still){r.s='prog';r.by=a;a.st='work';a.job=r.id;render();dock();setTimeout(()=>finish(ix,a,g),3000);return}
+  const P=$('panel'),row=$('r'+ix),rr0=row.getBoundingClientRect();
+  if(rr0.top<90||rr0.bottom>innerHeight-40)row.scrollIntoView({behavior:'smooth',block:'center'});
+  const pr=P.getBoundingClientRect(),sl=$('ph'+ai).getBoundingClientRect(),rr=row.getBoundingClientRect(),st=$('s'+ix).getBoundingClientRect();
+  const sx=sl.left-pr.left,sy=sl.top-pr.top,gx=4,yRow=rr.bottom-pr.top-64,xT=st.left-pr.left-62,rx=pr.width-64;
+  const w=document.createElement('div');w.className='walker';w.innerHTML=bot(a.c,'work');P.appendChild(w);
+  await walk(w,[[sx,sy],[gx,sy],[gx,yRow],[xT,yRow]],.26);
+  if(g!==gen)return;
+  w.firstElementChild.className='bot m-happy';pick();
+  r.s='prog';r.by=a;r.hit=true;render();
+  await wait(900);if(g!==gen)return;
+  w.firstElementChild.className='bot m-work';
+  await walk(w,[[xT,yRow],[rx,yRow],[rx,sy],[sx,sy]],.3);
+  if(g!==gen)return;
+  w.remove();a.st='work';a.job=r.id;r.hit=false;render();dock();
+  setTimeout(()=>finish(ix,a,g),5500);
+}
+function tick(){
+  if(!auto)return;
+  const ix=R.findIndex(r=>r.s==='open'&&!r.claim);
+  if(ix>=0&&AG.some(a=>a.st==='idle'))go(ix);
+}
+$('rows').onclick=e=>{const s=e.target.closest('.st.open');if(s)go(+s.dataset.i)};
+function reset(){
+  gen++;document.querySelectorAll('.walker').forEach(w=>w.remove());
+  AG=AGD.map(a=>({n:a[0],c:a[1],st:'idle',job:''}));R=ROWS.map(r=>({...r,s:'open',by:null,claim:false}));
+  render();dock();const g=gen;setTimeout(()=>{if(g===gen)tick()},1200);
+}
+$('replay').onclick=reset;
+setInterval(tick,3800);
+reset();
+</script>
+</body>
+</html>
